@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cricket Team Draft</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+    }
+    #turn {
+      font-size: 1.5rem;
+      margin: 20px 0;
+      text-align: center;
+    }
+    #pickBtn {
+      display: block;
+      margin: 10px auto 20px auto;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    #remainingPlayers {
+      margin-bottom: 30px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 5px;
+      max-height: 120px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+    }
+    #teams {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+    .team {
+      background: #fff;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 220px;
+      padding: 10px;
+    }
+    .team h3 {
+      margin-top: 0;
+      text-align: center;
+      color: #2c3e50;
+    }
+    .player-list {
+      list-style: none;
+      padding-left: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .player-list li {
+      margin: 3px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cricket Team Draft</h1>
+  <div id="turn">Current turn: <strong></strong></div>
+  <button id="pickBtn">Pick a Player</button>
+
+  <h2>Remaining Players (Click "Pick a Player" to assign)</h2>
+  <div id="remainingPlayers"></div>
+
+  <h2>Teams</h2>
+  <div id="teams"></div>
+
+  <script>
+    // Captains
+    const captains = ["Hamza", "Usman", "Taimoor", "Bilal", "Farhan", "Shahzaib", "Maaz", "Rehan"];
+
+    // Players
+    const players = [
+      "Adeel", "Adnan", "Ahmed", "Ahmar", "Ahsan", "Ali", "Ammar", "Amir", "Anas", "Anees", "Arif", "Arman", "Arsalan",
+      "Asad", "Asif", "Atif", "Ayaz", "Ayaan", "Azhar", "Babar", "Badar", "Basit", "Danish", "Daniyal", "Dawood",
+      "Ehsan", "Faizan", "Fakhir", "Faraz", "Fawad", "Fahad", "Ghulam", "Ghazanfar", "Habib", "Haider", "Hammad",
+      "Hamid", "Haris", "Hassan", "Hashim", "Haseeb", "Hussain", "Ibrahim", "Idris", "Iftikhar", "Imran", "Irfan",
+      "Iqbal", "Ilyas", "Jameel", "Junaid", "Jawad", "Kamran", "Kashif", "Khalid", "Khizar", "Khurram", "Luqman",
+      "Latif", "Mahad", "Mansoor", "Mateen", "Murtaza", "Mustafa", "Mohsin", "Muhammad", "Muzammil", "Naveed",
+      "Noman", "Nabeel", "Nauman", "Nasir", "Nouman", "Owais", "Omar", "Osama", "Qadir", "Qasim", "Qadeer", "Rameez",
+      "Rizwan", "Raza", "Rauf", "Saad", "Sadiq", "Salman", "Sarfraz", "Shahbaz", "Shahid", "Shehryar", "Shafqat",
+      "Sharjeel", "Shariq", "Sikandar", "Sohaib", "Sohail", "Subhan", "Suleman", "Syed", "Talha", "Tariq", "Umair",
+      "Usama", "Waleed"
+    ];
+
+    // State
+    let remainingPlayers = [...players];
+    let teams = captains.map(name => ({ captain: name, players: [] }));
+    let currentCaptainIndex = 0;
+
+    // Elements
+    const turnEl = document.querySelector("#turn strong");
+    const pickBtn = document.getElementById("pickBtn");
+    const remainingPlayersEl = document.getElementById("remainingPlayers");
+    const teamsEl = document.getElementById("teams");
+
+    // Initialize
+    function init() {
+      updateTurn();
+      renderRemainingPlayers();
+      renderTeams();
+    }
+
+    // Update current turn display
+    function updateTurn() {
+      if (remainingPlayers.length === 0) {
+        turnEl.textContent = "Draft Completed!";
+        pickBtn.disabled = true;
+      } else {
+        turnEl.textContent = teams[currentCaptainIndex].captain;
+      }
+    }
+
+    // Render remaining players list
+    function renderRemainingPlayers() {
+      if (remainingPlayers.length === 0) {
+        remainingPlayersEl.textContent = "No players remaining.";
+        return;
+      }
+      remainingPlayersEl.innerHTML = remainingPlayers.join(", ");
+    }
+
+    // Render teams and their players
+    function renderTeams() {
+      teamsEl.innerHTML = "";
+      teams.forEach(team => {
+        const teamDiv = document.createElement("div");
+        teamDiv.className = "team";
+        const title = document.createElement("h3");
+        title.textContent = `${team.captain}'s Team (${team.players.length}/13)`;
+        teamDiv.appendChild(title);
+        const list = document.createElement("ul");
+        list.className = "player-list";
+        team.players.forEach(player => {
+          const li = document.createElement("li");
+          li.textContent = player;
+          list.appendChild(li);
+        });
+        teamDiv.appendChild(list);
+        teamsEl.appendChild(teamDiv);
+      });
+    }
+
+    // Pick player for current captain
+    function pickPlayer() {
+      if (remainingPlayers.length === 0) {
+        alert("All players have been picked.");
+        return;
+      }
+      if (teams[currentCaptainIndex].players.length >= 13) {
+        alert(`${teams[currentCaptainIndex].captain} already has 13 players.`);
+        nextTurn();
+        return;
+      }
+
+      // Randomly select player
+      const randomIndex = Math.floor(Math.random() * remainingPlayers.length);
+      const player = remainingPlayers.splice(randomIndex, 1)[0];
+
+      // Add to captain's team
+      teams[currentCaptainIndex].players.push(player);
+
+      // Update UI
+      renderRemainingPlayers();
+      renderTeams();
+
+      // Check if team is full, if so skip turn
+      if (teams[currentCaptainIndex].players.length >= 13) {
+        nextTurn();
+      } else {
+        // Move to next captain normally
+        nextTurn();
+      }
+    }
+
+    // Advance to next captain's turn
+    function nextTurn() {
+      currentCaptainIndex++;
+      if (currentCaptainIndex >= teams.length) {
+        currentCaptainIndex = 0;
+      }
+      updateTurn();
+
+      // Disable button if all players are drafted
+      if (remainingPlayers.length === 0) {
+        pickBtn.disabled = true;
+      }
+    }
+
+    // Button click handler
+    pickBtn.addEventListener("click", pickPlayer);
+
+    // Start the draft
+    init();
+  </script>
+</body>
+</html>
