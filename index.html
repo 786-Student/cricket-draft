@@ -8,200 +8,151 @@
     body {
       font-family: Arial, sans-serif;
       max-width: 900px;
-      margin: auto;
+      margin: 0 auto;
       padding: 20px;
-      background: #f9f9f9;
     }
-    h1 {
+    #draftNumberBox {
+      border: 1px solid #aaa;
+      padding: 10px;
+      margin: 10px 0;
+      width: 150px;
       text-align: center;
-    }
-    #turn {
-      font-size: 1.5rem;
-      margin: 20px 0;
-      text-align: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      background: #f0f0f0;
+      border-radius: 5px;
     }
     #pickBtn {
-      display: block;
-      margin: 10px auto 20px auto;
       padding: 10px 20px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
       cursor: pointer;
-    }
-    #remainingPlayers {
-      margin-bottom: 30px;
-      padding: 10px;
-      background: #fff;
-      border-radius: 5px;
-      max-height: 120px;
-      overflow-y: scroll;
-      border: 1px solid #ccc;
     }
     #teams {
       display: flex;
       flex-wrap: wrap;
       gap: 15px;
-      justify-content: center;
     }
     .team {
-      background: #fff;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      width: 220px;
+      flex: 1 1 200px;
+      border: 1px solid #ddd;
       padding: 10px;
+      border-radius: 5px;
+      background: #fafafa;
     }
     .team h3 {
       margin-top: 0;
-      text-align: center;
-      color: #2c3e50;
-    }
-    .player-list {
-      list-style: none;
-      padding-left: 10px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .player-list li {
-      margin: 3px 0;
     }
   </style>
 </head>
 <body>
   <h1>Cricket Team Draft</h1>
-  <div id="turn">Current turn: <strong></strong></div>
+
+  <div id="draftNumberBox">Pick #1</div>
+
   <button id="pickBtn">Pick a Player</button>
 
-  <h2>Remaining Players (Click "Pick a Player" to assign)</h2>
-  <div id="remainingPlayers"></div>
+  <p>Turn: <strong id="turn"></strong></p>
+  <p>Remaining Players: <strong id="remainingPlayers"></strong></p>
 
-  <h2>Teams</h2>
   <div id="teams"></div>
 
   <script>
-    // Captains
-    const captains = ["Hamza", "Usman", "Taimoor", "Bilal", "Farhan", "Shahzaib", "Maaz", "Rehan"];
-
-    // Players
-    const players = [
-      "Adeel", "Adnan", "Ahmed", "Ahmar", "Ahsan", "Ali", "Ammar", "Amir", "Anas", "Anees", "Arif", "Arman", "Arsalan",
-      "Asad", "Asif", "Atif", "Ayaz", "Ayaan", "Azhar", "Babar", "Badar", "Basit", "Danish", "Daniyal", "Dawood",
-      "Ehsan", "Faizan", "Fakhir", "Faraz", "Fawad", "Fahad", "Ghulam", "Ghazanfar", "Habib", "Haider", "Hammad",
-      "Hamid", "Haris", "Hassan", "Hashim", "Haseeb", "Hussain", "Ibrahim", "Idris", "Iftikhar", "Imran", "Irfan",
-      "Iqbal", "Ilyas", "Jameel", "Junaid", "Jawad", "Kamran", "Kashif", "Khalid", "Khizar", "Khurram", "Luqman",
-      "Latif", "Mahad", "Mansoor", "Mateen", "Murtaza", "Mustafa", "Mohsin", "Muhammad", "Muzammil", "Naveed",
-      "Noman", "Nabeel", "Nauman", "Nasir", "Nouman", "Owais", "Omar", "Osama", "Qadir", "Qasim", "Qadeer", "Rameez",
-      "Rizwan", "Raza", "Rauf", "Saad", "Sadiq", "Salman", "Sarfraz", "Shahbaz", "Shahid", "Shehryar", "Shafqat",
-      "Sharjeel", "Shariq", "Sikandar", "Sohaib", "Sohail", "Subhan", "Suleman", "Syed", "Talha", "Tariq", "Umair",
-      "Usama", "Waleed"
+    const captains = [
+      "Hamza",
+      "Usman",
+      "Taimoor",
+      "Bilal",
+      "Farhan",
+      "Shahzaib",
+      "Maaz",
+      "Rehan"
     ];
 
-    // State
-    let remainingPlayers = [...players];
-    let teams = captains.map(name => ({ captain: name, players: [] }));
-    let currentCaptainIndex = 0;
+    const players = [
+      "Adeel", "Adnan", "Ahmed", "Ahmar", "Ahsan", "Ali", "Ammar", "Amir",
+      "Anas", "Anees", "Arif", "Arman", "Arsalan", "Asad", "Asif", "Atif",
+      "Ayaz", "Ayaan", "Azhar", "Babar", "Badar", "Basit", "Danish", "Daniyal",
+      "Dawood", "Ehsan", "Faizan", "Fakhir", "Faraz", "Fawad", "Fahad",
+      "Ghulam", "Ghazanfar", "Habib", "Haider", "Hammad", "Hamid", "Haris",
+      "Hassan", "Hashim", "Haseeb", "Hussain", "Ibrahim", "Idris", "Iftikhar",
+      "Imran", "Irfan", "Iqbal", "Ilyas", "Jameel", "Junaid", "Jawad",
+      "Kamran", "Kashif", "Khalid", "Khizar", "Khurram", "Luqman", "Latif",
+      "Mahad", "Mansoor", "Mateen", "Murtaza", "Mustafa", "Mohsin",
+      "Muhammad", "Muzammil", "Naveed", "Noman", "Nabeel", "Nauman", "Nasir",
+      "Nouman", "Owais", "Omar", "Osama", "Qadir", "Qasim", "Qadeer",
+      "Rameez", "Rizwan", "Raza", "Rauf", "Saad", "Sadiq", "Salman",
+      "Sarfraz", "Shahbaz", "Shahid", "Shehryar", "Shafqat", "Sharjeel",
+      "Shariq", "Sikandar", "Sohaib", "Sohail", "Subhan", "Suleman", "Syed",
+      "Talha", "Tariq", "Umair", "Usama", "Waleed"
+    ];
 
-    // Elements
-    const turnEl = document.querySelector("#turn strong");
+    const playersPerCaptain = 13;
+    let turn = 0; // which captain's turn (0-7)
+    let draftNumber = 1; // actual pick number
+    let availablePlayers = [...players]; // copy of players to pick from
+    const teams = {};
+
+    const turnEl = document.getElementById("turn");
     const pickBtn = document.getElementById("pickBtn");
     const remainingPlayersEl = document.getElementById("remainingPlayers");
     const teamsEl = document.getElementById("teams");
+    const draftNumberBox = document.getElementById("draftNumberBox");
 
-    // Initialize
     function init() {
-      updateTurn();
-      renderRemainingPlayers();
-      renderTeams();
-    }
-
-    // Update current turn display
-    function updateTurn() {
-      if (remainingPlayers.length === 0) {
-        turnEl.textContent = "Draft Completed!";
-        pickBtn.disabled = true;
-      } else {
-        turnEl.textContent = teams[currentCaptainIndex].captain;
-      }
-    }
-
-    // Render remaining players list
-    function renderRemainingPlayers() {
-      if (remainingPlayers.length === 0) {
-        remainingPlayersEl.textContent = "No players remaining.";
-        return;
-      }
-      remainingPlayersEl.innerHTML = remainingPlayers.join(", ");
-    }
-
-    // Render teams and their players
-    function renderTeams() {
-      teamsEl.innerHTML = "";
-      teams.forEach(team => {
-        const teamDiv = document.createElement("div");
-        teamDiv.className = "team";
-        const title = document.createElement("h3");
-        title.textContent = `${team.captain}'s Team (${team.players.length}/13)`;
-        teamDiv.appendChild(title);
-        const list = document.createElement("ul");
-        list.className = "player-list";
-        team.players.forEach(player => {
-          const li = document.createElement("li");
-          li.textContent = player;
-          list.appendChild(li);
-        });
-        teamDiv.appendChild(list);
-        teamsEl.appendChild(teamDiv);
+      // Initialize teams object
+      captains.forEach(captain => {
+        teams[captain] = [];
       });
+      updateUI();
     }
 
-    // Pick player for current captain
+    function updateUI() {
+      // Update turn info
+      turnEl.textContent = captains[turn];
+      // Update remaining players count
+      remainingPlayersEl.textContent = availablePlayers.length;
+      // Update teams display
+      teamsEl.innerHTML = "";
+      for (const captain of captains) {
+        const teamDiv = document.createElement("div");
+        teamDiv.classList.add("team");
+        teamDiv.innerHTML = `<h3>${captain}</h3><ul>${teams[captain].map(player => `<li>${player}</li>`).join("")}</ul>`;
+        teamsEl.appendChild(teamDiv);
+      }
+    }
+
     function pickPlayer() {
-      if (remainingPlayers.length === 0) {
-        alert("All players have been picked.");
-        return;
-      }
-      if (teams[currentCaptainIndex].players.length >= 13) {
-        alert(`${teams[currentCaptainIndex].captain} already has 13 players.`);
-        nextTurn();
-        return;
-      }
-
-      // Randomly select player
-      const randomIndex = Math.floor(Math.random() * remainingPlayers.length);
-      const player = remainingPlayers.splice(randomIndex, 1)[0];
-
-      // Add to captain's team
-      teams[currentCaptainIndex].players.push(player);
-
-      // Update UI
-      renderRemainingPlayers();
-      renderTeams();
-
-      // Check if team is full, if so skip turn
-      if (teams[currentCaptainIndex].players.length >= 13) {
-        nextTurn();
-      } else {
-        // Move to next captain normally
-        nextTurn();
-      }
-    }
-
-    // Advance to next captain's turn
-    function nextTurn() {
-      currentCaptainIndex++;
-      if (currentCaptainIndex >= teams.length) {
-        currentCaptainIndex = 0;
-      }
-      updateTurn();
-
-      // Disable button if all players are drafted
-      if (remainingPlayers.length === 0) {
+      if (availablePlayers.length === 0) {
+        alert("All players have been picked!");
         pickBtn.disabled = true;
+        return;
       }
+      if (teams[captains[turn]].length >= playersPerCaptain) {
+        alert(`${captains[turn]} already picked ${playersPerCaptain} players.`);
+        // Move to next turn anyway
+        turn = (turn + 1) % captains.length;
+        updateUI();
+        return;
+      }
+
+      // Pick random player from availablePlayers
+      const randomIndex = Math.floor(Math.random() * availablePlayers.length);
+      const pickedPlayer = availablePlayers.splice(randomIndex, 1)[0];
+      teams[captains[turn]].push(pickedPlayer);
+
+      // Update draft number box
+      draftNumberBox.textContent = `Pick #${draftNumber}`;
+      draftNumber++;
+
+      // Move to next captain
+      turn = (turn + 1) % captains.length;
+
+      updateUI();
     }
 
-    // Button click handler
     pickBtn.addEventListener("click", pickPlayer);
 
-    // Start the draft
     init();
   </script>
 </body>
