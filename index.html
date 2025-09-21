@@ -4,21 +4,36 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cricket Team Draft</title>
-  <!-- Tailwind CDN -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Animation for new pick */
-    .fade-in {
-      animation: fadeInHighlight 1.5s ease forwards;
-    }
 
-    @keyframes fadeInHighlight {
+  <style>
+    /* Draft Number Box Bounce */
+    @keyframes bounceIn {
       0% {
-        background-color: #d1fae5; /* Tailwind green-100 */
+        transform: scale(0.8);
         opacity: 0;
       }
       50% {
-        background-color: #a7f3d0; /* Tailwind green-200 */
+        transform: scale(1.15);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    .animate-bounceIn {
+      animation: bounceIn 0.5s ease-out;
+    }
+
+    /* Player Pick fade and highlight */
+    @keyframes fadeInHighlight {
+      0% {
+        background-color: #bbf7d0; /* Tailwind green-200 */
+        opacity: 0;
+      }
+      50% {
+        background-color: #86efac; /* Tailwind green-300 */
         opacity: 1;
       }
       100% {
@@ -26,13 +41,66 @@
         opacity: 1;
       }
     }
+    .fade-in-pick {
+      animation: fadeInHighlight 1.5s ease forwards;
+    }
+
+    /* Glowing highlight for current captain */
+    .glow {
+      box-shadow: 0 0 12px 3px rgba(34,197,94,0.7);
+      transform: scale(1.05);
+      transition: transform 0.3s ease;
+      border-radius: 0.5rem; /* match rounded-lg */
+    }
+
+    /* Sliding animations */
+    @keyframes slideInLeft {
+      0% {
+        transform: translateX(-20px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes slideOutRight {
+      0% {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(20px);
+        opacity: 0;
+      }
+    }
+
+    .slide-in-left {
+      animation: slideInLeft 0.4s ease forwards;
+    }
+
+    .slide-out-right {
+      animation: slideOutRight 0.4s ease forwards;
+    }
+
+    /* Fade for draft board */
+    .fade {
+      transition: opacity 0.4s ease;
+    }
+    .fade-out {
+      opacity: 0;
+    }
+    .fade-in {
+      opacity: 1;
+    }
   </style>
 </head>
 <body class="bg-green-50 min-h-screen flex flex-col items-center py-10 font-sans">
 
   <h1 class="text-4xl font-bold text-green-800 mb-6">Cricket Team Draft</h1>
 
-  <div id="draftNumberBox" class="mb-6 px-6 py-3 bg-white rounded shadow-md text-xl font-semibold text-green-700 border border-green-300">
+  <div id="draftNumberBox" 
+       class="mb-6 px-6 py-3 bg-white rounded shadow-md text-xl font-semibold text-green-700 border border-green-300">
     Pick #1
   </div>
 
@@ -45,9 +113,12 @@
     Turn: <span id="turn" class="font-bold"></span> &nbsp;&nbsp;|&nbsp;&nbsp; Remaining Players: <span id="remainingPlayers" class="font-bold"></span>
   </div>
 
-  <div id="teams" class="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+  <div id="teams" class="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 fade fade-in">
     <!-- Teams will be rendered here -->
   </div>
+
+  <!-- Sound effect -->
+  <audio id="pickSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" preload="auto"></audio>
 
   <script>
     const captains = [
@@ -90,9 +161,13 @@
     const remainingPlayersEl = document.getElementById("remainingPlayers");
     const teamsEl = document.getElementById("teams");
     const draftNumberBox = document.getElementById("draftNumberBox");
+    const pickSound = document.getElementById("pickSound");
+
+    let previousActiveCaptain = null;
 
     function init() {
       captains.forEach(captain => teams[captain] = []);
+      previousActiveCaptain = captains[turn];
       updateUI();
     }
 
@@ -100,33 +175,56 @@
       turnEl.textContent = captains[turn];
       remainingPlayersEl.textContent = availablePlayers.length;
 
-      teamsEl.innerHTML = "";
-      for (const captain of captains) {
-        const teamDiv = document.createElement("div");
-        teamDiv.className = "bg-white rounded-lg shadow-md p-4 flex flex-col transition-all duration-500";
+      // Fade out teams container
+      teamsEl.classList.remove('fade-in');
+      teamsEl.classList.add('fade-out');
 
-        // Highlight current captain's card
-        if (captain === captains[turn]) {
-          teamDiv.classList.add("ring-4", "ring-green-400", "scale-105");
+      setTimeout(() => {
+        teamsEl.innerHTML = "";
+
+        for (const captain of captains) {
+          const teamDiv = document.createElement("div");
+          teamDiv.className = "bg-white rounded-lg shadow-md p-4 flex flex-col transition-transform duration-300";
+
+          // Sliding animation logic
+          if (captain === captains[turn]) {
+            teamDiv.classList.add("glow", "slide-in-left");
+          } else if (captain === previousActiveCaptain) {
+            teamDiv.classList.add("slide-out-right");
+          }
+
+          // Prepare the player list, add fade-in class to the newly picked player only
+          const playerListItems = teams[captain].map(player => {
+            if (player === pickedPlayer && captain === captains[(turn + captains.length - 1) % captains.length]) {
+              return `<li class="fade-in-pick">${player}</li>`;
+            }
+            return `<li>${player}</li>`;
+          }).join("");
+
+          teamDiv.innerHTML = `
+            <h3 class="text-green-800 font-semibold mb-2">${captain}</h3>
+            <ul class="list-disc list-inside flex-grow space-y-1 max-h-56 overflow-y-auto text-gray-700">
+              ${playerListItems}
+            </ul>
+            <div class="mt-2 text-sm text-gray-500">Players: ${teams[captain].length} / ${playersPerCaptain}</div>
+          `;
+          teamsEl.appendChild(teamDiv);
         }
 
-        // Build the player list, adding fade-in to the newly picked player only in that captain's list
-        const playerListItems = teams[captain].map(player => {
-          if (player === pickedPlayer && captain === captains[(turn + captains.length - 1) % captains.length]) {
-            return `<li class="fade-in">${player}</li>`;
-          }
-          return `<li>${player}</li>`;
-        }).join("");
+        // Remove slide-out class after animation ends to prevent permanent invisible
+        const slideOutDiv = Array.from(teamsEl.children).find(div => div.classList.contains('slide-out-right'));
+        if (slideOutDiv) {
+          slideOutDiv.addEventListener('animationend', () => {
+            slideOutDiv.classList.remove('slide-out-right');
+          }, { once: true });
+        }
 
-        teamDiv.innerHTML = `
-          <h3 class="text-green-800 font-semibold mb-2">${captain}</h3>
-          <ul class="list-disc list-inside flex-grow space-y-1 max-h-56 overflow-y-auto text-gray-700">
-            ${playerListItems}
-          </ul>
-          <div class="mt-2 text-sm text-gray-500">Players: ${teams[captain].length} / ${playersPerCaptain}</div>
-        `;
-        teamsEl.appendChild(teamDiv);
-      }
+        // After fade out update, fade in
+        teamsEl.classList.remove('fade-out');
+        teamsEl.classList.add('fade-in');
+
+        previousActiveCaptain = captains[turn];
+      }, 400);
     }
 
     function pickPlayer() {
@@ -147,15 +245,23 @@
       teams[captains[turn]].push(pickedPlayer);
 
       draftNumberBox.textContent = `Pick #${draftNumber}`;
-      draftNumber++;
 
-      // Save current turn so we can highlight the correct captain in updateUI
-      const lastTurn = turn;
+      // Animate draft number box bounce
+      draftNumberBox.classList.add('animate-bounceIn');
+      setTimeout(() => {
+        draftNumberBox.classList.remove('animate-bounceIn');
+      }, 500);
+
+      // Play pick sound
+      pickSound.currentTime = 0;
+      pickSound.play();
+
+      draftNumber++;
 
       // Move to next captain
       turn = (turn + 1) % captains.length;
 
-      // Pass the picked player to animate it
+      // Update UI and animate newly picked player
       updateUI(pickedPlayer);
     }
 
