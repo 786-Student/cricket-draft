@@ -36,17 +36,16 @@
       0% { transform: translateX(-20px); opacity: 0; }
       100% { transform: translateX(0); opacity: 1; }
     }
-    @keyframes slideOutRight {
-      0% { transform: translateX(0); opacity: 1; }
-      100% { transform: translateX(20px); opacity: 0; }
-    }
 
     .slide-in-left {
       animation: slideInLeft 0.4s ease forwards;
     }
-    .slide-out-right {
-      animation: slideOutRight 0.4s ease forwards;
+
+    .fade {
+      transition: opacity 0.4s ease;
     }
+    .fade-out { opacity: 0; }
+    .fade-in { opacity: 1; }
   </style>
 </head>
 <body class="bg-green-50 min-h-screen flex flex-col items-center py-10 font-sans">
@@ -65,7 +64,7 @@
     Turn: <span id="turn" class="font-bold"></span> &nbsp;&nbsp;|&nbsp;&nbsp; Remaining Players: <span id="remainingPlayers" class="font-bold"></span>
   </div>
 
-  <div id="teams" class="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+  <div id="teams" class="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 fade fade-in">
     <!-- Teams will render here -->
   </div>
 
@@ -106,7 +105,6 @@
     const teamsEl = document.getElementById("teams");
     const draftNumberBox = document.getElementById("draftNumberBox");
     const pickSound = document.getElementById("pickSound");
-    let previousActiveCaptain = captains[turn];
 
     function init() {
       captains.forEach(captain => teams[captain] = []);
@@ -125,27 +123,23 @@
 
         if (captain === captains[turn]) {
           teamDiv.classList.add("glow", "slide-in-left");
-        } else if (captain === previousActiveCaptain) {
-          teamDiv.classList.add("slide-out-right");
         }
 
         const playerListItems = teams[captain].map((player, index) => {
           const wasJustPicked = player === pickedPlayer &&
             captain === captains[(turn + captains.length - 1) % captains.length];
-          return `<li class="${wasJustPicked ? 'fade-in-pick' : ''}">${player}</li>`;
+          return `<li class="${wasJustPicked ? 'fade-in-pick' : ''}">${index + 1}. ${player}</li>`;
         }).join("");
 
         teamDiv.innerHTML = `
           <h3 class="text-green-800 font-semibold mb-2">${captain}</h3>
-          <ul class="list-decimal list-inside flex-grow space-y-1 max-h-56 overflow-y-auto text-gray-700">
+          <ul class="list-inside flex-grow space-y-1 max-h-56 overflow-y-auto text-gray-700">
             ${playerListItems}
           </ul>
           <div class="mt-2 text-sm text-gray-500">Players: ${teams[captain].length} / ${playersPerCaptain}</div>
         `;
         teamsEl.appendChild(teamDiv);
       }
-
-      previousActiveCaptain = captains[turn];
     }
 
     function pickPlayer() {
@@ -173,6 +167,7 @@
 
       pickSound.currentTime = 0;
       pickSound.play();
+
       draftNumber++;
       turn = (turn + 1) % captains.length;
       updateUI(pickedPlayer);
