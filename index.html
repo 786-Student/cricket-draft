@@ -49,9 +49,10 @@
     }
 
     .fade {
+      opacity: 1;
       transition: opacity 0.4s ease;
     }
-    .fade-out { opacity: 0; }
+    .fade-out { opacity: 0.25; }  /* Changed from 0 to 0.25 to prevent full invisibility */
     .fade-in { opacity: 1; }
   </style>
 </head>
@@ -139,10 +140,11 @@
             teamDiv.classList.add("slide-out-right");
           }
 
-          const playerListItems = teams[captain].map(player => {
+          // Number players in the list (index + 1)
+          const playerListItems = teams[captain].map((player, index) => {
             const wasJustPicked = player === pickedPlayer &&
               captain === captains[(turn + captains.length - 1) % captains.length];
-            return `<li class="${wasJustPicked ? 'fade-in-pick' : ''}">${player}</li>`;
+            return `<li class="${wasJustPicked ? 'fade-in-pick' : ''}">${index + 1}. ${player}</li>`;
           }).join("");
 
           teamDiv.innerHTML = `
@@ -161,10 +163,21 @@
       }, 400);
     }
 
+    function showFinalSummary() {
+      pickBtn.style.display = "none";
+      turnEl.textContent = "";
+      remainingPlayersEl.textContent = "";
+      draftNumberBox.textContent = "🎉 Draft Complete!";
+
+      const summary = document.createElement("div");
+      summary.textContent = "All players have been successfully drafted!";
+      summary.className = "text-xl text-green-700 font-semibold mt-6";
+      document.body.insertBefore(summary, teamsEl);
+    }
+
     function pickPlayer() {
       if (availablePlayers.length === 0) {
-        alert("All players have been picked!");
-        pickBtn.disabled = true;
+        setTimeout(showFinalSummary, 500);
         return;
       }
       if (teams[captains[turn]].length >= playersPerCaptain) {
